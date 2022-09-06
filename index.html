@@ -163,10 +163,14 @@
 
 				let yPos = parseInt(lastLine.style.top);
 				let xPos = mousePos[0];
+				
+				judgeNote(xPos, yPos)
+			}
+			function judgeNote (xPos, yPos) {
 				// 判定距离该位置最近的Note
 				let notes = document.getElementsByClassName('note');
 				if (notes.length == 0) return; // 没有Note还判定个寂寞
-				let minDistance = 0;
+				let minDistance = 1048576;
 				let minNote = notes[0];
 				let flag = false;
 				for (let i = 0; i < notes.length; i++) {
@@ -176,16 +180,15 @@
 					let distance =
 						Math.pow(eleX - xPos, 2) + Math.pow(eleY - yPos, 2);
 
-					if (Math.abs(eleX - xPos) >= 0.05 * WIDTH) continue;
+					if (Math.abs(eleX - xPos) >= 0.1 * WIDTH) continue;
 					else if (i == 0) {
 						minDistance = distance;
 						minNote = element;
 					} else if (distance < minDistance) {
-						distance = minDistance;
+						minDistance = distance;
 						minNote = element;
 					}
 					flag = true;
-					console.log(eleX-xPos)
 				}
 				if (flag) {
 					let distanceY = Math.abs(
@@ -241,61 +244,7 @@
 				let yPos = parseInt(lastLine.style.top);
 				let xPos = (WIDTH/5) * keyCodeOrder.indexOf(kc) + (WIDTH/10)
 
-				// 判定距离该位置最近的Note
-				let notes = document.getElementsByClassName('note');
-				if (notes.length == 0) return; // 没有Note还判定个寂寞
-				let minDistance = 0;
-				let minNote = notes[0];
-				let flag = false;
-				for (let i = 0; i < notes.length; i++) {
-					let element = notes[i];
-					let eleX = parseInt(element.style.left);
-					let eleY = parseInt(element.style.top);
-					let distance =
-						Math.pow(eleX - xPos, 2) + Math.pow(eleY - yPos, 2);
-
-					if (Math.abs(eleX - xPos) >= 0.1 * WIDTH) continue;
-					else if (i == 0) {
-						minDistance = distance;
-						minNote = element;
-					} else if (distance < minDistance) {
-						distance = minDistance;
-						minNote = element;
-					}
-					flag = true;
-				}
-				if (flag) {
-					let distanceY = Math.abs(
-						parseInt(minNote.style.top) - yPos
-					);
-					if (distanceY <= PERFECT) {
-						createEffect(
-							'perfect',
-							parseInt(minNote.style.left) + 50,
-							parseInt(yPos)
-						);
-						minNote.remove();
-						combo++;
-						score += PSCORE;
-					} else if (distanceY <= GOOD) {
-						createEffect(
-							'good',
-							parseInt(minNote.style.left) + 50,
-							parseInt(yPos)
-						);
-						minNote.remove();
-						combo++;
-						score += GSCORE;
-					} else if (distanceY <= BAD) {
-						createEffect(
-							'bad',
-							parseInt(minNote.style.left) + 50,
-							parseInt(yPos)
-						);
-						minNote.remove();
-						combo = 0;
-					}
-				}
+				judgeNote(xPos, yPos)
 			}
 
 			window.onload = async function () {
