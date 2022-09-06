@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+	<head>
+		<meta charset="UTF-8" />
+		<title>Document</title>
+		<style>
+			.judgel {
+				position: absolute;
+				top: 600px;
+				border-top: 3px solid #dfe4ea;
+				height: 20px;
+				width: 100%;
+			}
+
+			.tap {
+				background-color: #1e90ff;
+				color: #dfe4ea;
+			}
+		</style>
+	</head>
+	<body style="background-color: #2f3542">
+		<!-- <img src="source/tap.jpg" alt="[Tap Note]" class="note tap"> -->
+		<div id="notes"></div>
+		<div id="judgelines"></div>
+
+		<script>
+			const MAX_HEIGHT = 800;
+			const WIDTH = 1000;
+			let GlobalCount = 0;
+
+			function getMousePos(event) {
+				var e = event || window.event;
+
+				return { x: e.clientX, y: clientY };
+			}
+
+			function createTapNote(xPos = 0) {
+				let order = 'QWERT';
+				let tap = document.createElement('div');
+				tap.className =
+					'note tap ' +
+					order[Math.floor(xPos / (WIDTH / 5))] +
+					'judge';
+				tap.id = 'note' + GlobalCount;
+				tap.style =
+					'width: 100px; height: 25px; position: absolute; top: 0px; left: ' +
+					xPos +
+					'px;';
+				document.getElementById('notes').appendChild(tap);
+				tap.innerHTML = (
+					order[Math.floor(xPos / (WIDTH / 5))] + ' '
+				).repeat(4);
+				GlobalCount++;
+			}
+
+			function createJudgeLine(yPos = 0) {
+				let line = document.createElement('div');
+				line.className = 'judgel';
+				line.style = 'top: ' + yPos + 'px';
+				document.getElementById('judgelines').appendChild(line);
+			}
+
+			function notesFall() {
+				let notes = document.getElementsByClassName('note');
+				for (let i = 0; i < notes.length; i++) {
+					let note = notes[i];
+					note.style.top = parseInt(note.style.top) + 20 + 'px';
+					if (parseInt(note.style.top) >= MAX_HEIGHT) note.remove();
+				}
+			}
+
+			function sleep(time) {
+				return new Promise((resolve) => setTimeout(resolve, time));
+			}
+
+			function randbet(l = 0, r = 1) {
+				return Math.random() * (r - l + 1) + l;
+			}
+
+			window.onload = async function () {
+				createTapNote();
+				let tick = 1;
+				while (true) {
+					await sleep(50);
+					notesFall();
+					if (tick % 10 == 0) {
+						createTapNote(randbet(0, WIDTH));
+					}
+					tick++;
+				}
+			};
+		</script>
+	</body>
+</html>
