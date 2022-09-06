@@ -60,11 +60,11 @@
 		<script>
 			const MAX_HEIGHT = 800;
 			const WIDTH = 1000;
-			const PERFECT = 100; // {PERFECT}px以内为Perfect判定
+			const PERFECT = 40; // {PERFECT}px以内为Perfect判定
 			const PSCORE = 5000; // Percect判定的加分
-			const GOOD = 200;
+			const GOOD = 80;
 			const GSCORE = 0.65 * PSCORE;
-			const BAD = 250;
+			const BAD = 100;
 			const EFFECT_LAST = 5; // 特效持续{}刻
 			let countOfNotes = 0;
 			let countOfLines = 0;
@@ -171,12 +171,12 @@
 				let flag = false;
 				for (let i = 0; i < notes.length; i++) {
 					let element = notes[i];
-					let eleX = parseInt(element.style.left);
-					let eleY = parseInt(element.style.top);
+					let eleX = parseInt(element.style.left)+50;
+					let eleY = parseInt(element.style.top)+12.5;
 					let distance =
 						Math.pow(eleX - xPos, 2) + Math.pow(eleY - yPos, 2);
 
-					if (Math.abs(eleX - xPos) >= 0.1 * WIDTH) continue;
+					if (Math.abs(eleX - xPos) >= 0.05 * WIDTH) continue;
 					else if (i == 0) {
 						minDistance = distance;
 						minNote = element;
@@ -185,6 +185,7 @@
 						minNote = element;
 					}
 					flag = true;
+					console.log(eleX-xPos)
 				}
 				if (flag) {
 					let distanceY = Math.abs(
@@ -305,11 +306,11 @@
 				while (true) {
 					document.getElementById('comboNum').innerHTML =
 						combo.toString();
-					document.getElementById('scoreNum').innerHTML = pad(
+					document.getElementById('scoreNum').innerHTML = (score<1000000?(pad(
 						score,
 						7
-					);
-					await sleep(50);
+					)) : "我说你φ了你信不");
+					await sleep(40);
 					notesFall();
 					removeEffect();
 					if (tick % 10 == 0) {
