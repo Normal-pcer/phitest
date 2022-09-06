@@ -11,29 +11,84 @@
 				height: 20px;
 				width: 100%;
 			}
-
 			.tap {
 				background-color: #1e90ff;
 				color: #dfe4ea;
+			}
+			#showCombo {
+				color: #dfe4ea;
+				text-align: center;
+			}
+			#comboNum {
+				font-size: 1.5em;
+			}
+			#showScore {
+				color: #dfe4ea;
+				text-align: right;
+				font-size: 1.5em;
+			}
+			.effect {
+				width: 80px;
+				height: 80px;
+				position: absolute;
+			}
+			.perfect {
+				border: #fdcb6e 3px solid;
+			}
+			.good {
+				border: #1e90ff solid 3px;
+			}
+			.bad {
+				border: #dfe4ea solid 3px;
 			}
 		</style>
 	</head>
 	<body style="background-color: #2f3542">
 		<!-- <img src="source/tap.jpg" alt="[Tap Note]" class="note tap"> -->
+		<!-- 现在使用CSS绘制音符、判定线等 -->
 		<div id="notes"></div>
 		<div id="judgelines"></div>
+		<div id="showCombo">
+			<span id="comboNum"></span><br />
+			<span>COMBO</span>
+		</div>
+		<div id="showScore">
+			<span id="scoreNum"></span>
+		</div>
+		<div id="effects"></div>
 
 		<script>
 			const MAX_HEIGHT = 800;
 			const WIDTH = 1000;
-			let GlobalCount = 0;
+			const PERFECT = 100; // {PERFECT}px以内为Perfect判定
+			const PSCORE = 5000; // Percect判定的加分
+			const GOOD = 200;
+			const GSCORE = 0.65 * PSCORE;
+			const BAD = 250;
+			const EFFECT_LAST = 5; // 特效持续{}刻
+			let countOfNotes = 0;
+			let countOfLines = 0;
+			let combo = 0;
+			let tick = 1;
+			let score = 0;
+			const pad = (num, cover) =>
+				'0'.repeat(cover).concat(num).slice(-cover);
+			let effects_to_remove = new Array();
 
-			function getMousePos(event) {
-				var e = event || window.event;
-
-				return { x: e.clientX, y: clientY };
+			function createEffect(type = 'perfect', x, y) {
+				let effect = document.createElement('div');
+				effect.className = 'effect ' + type;
+				effect.style = 'top: ' + (y - 40).toString() + 'px; left: ' + (x - 40).toString() + 'px;';
+				document.getElementById('effects').appendChild(effect);
+				effects_to_remove.push([effect, tick + EFFECT_LAST]);
 			}
-
+			function removeEffect() {
+				// 应自动执行
+				for (let i = 0; i < effects_to_remove.length; i++) {
+					let element = effects_to_remove[i];
+					if (tick >= element[1]) element[0].remove();
+				}
+			}
 			function createTapNote(xPos = 0) {
 				let order = 'QWERT';
 				let tap = document.createElement('div');
@@ -41,7 +96,7 @@
 					'note tap ' +
 					order[Math.floor(xPos / (WIDTH / 5))] +
 					'judge';
-				tap.id = 'note' + GlobalCount;
+				tap.id = 'note' + countOfNotes;
 				tap.style =
 					'width: 100px; height: 25px; position: absolute; top: 0px; left: ' +
 					xPos +
@@ -50,14 +105,16 @@
 				tap.innerHTML = (
 					order[Math.floor(xPos / (WIDTH / 5))] + ' '
 				).repeat(4);
-				GlobalCount++;
+				countOfNotes++;
 			}
 
 			function createJudgeLine(yPos = 0) {
 				let line = document.createElement('div');
 				line.className = 'judgel';
+				line.id = 'jl' + countOfLines;
 				line.style = 'top: ' + yPos + 'px';
 				document.getElementById('judgelines').appendChild(line);
+				countOfLines++;
 			}
 
 			function notesFall() {
@@ -65,7 +122,10 @@
 				for (let i = 0; i < notes.length; i++) {
 					let note = notes[i];
 					note.style.top = parseInt(note.style.top) + 20 + 'px';
-					if (parseInt(note.style.top) >= MAX_HEIGHT) note.remove();
+					if (parseInt(note.style.top) >= MAX_HEIGHT) {
+						note.remove();
+						combo = 0;
+					}
 				}
 			}
 
@@ -77,12 +137,96 @@
 				return Math.random() * (r - l + 1) + l;
 			}
 
+			function onclick() {
+				let mousePos = [Number(event.pageX), Number(event.pageY)];
+
+				// 默认在最新生成的判定线上进行判定
+				let lines = document.getElementsByClassName('judgel');
+				if (lines.length == 0) return; // 没有判定线还判定个寂寞
+				let maxId = 0;
+				let maxElement = lines[0];
+				for (let i = 0; i < lines.length; i++) {
+					let element = lines[i];
+					if (parseInt(element.id.substr(2)) > maxId) {
+						maxId = parseInt(element.id.substr(2));
+						maxElement = element;
+					}
+				}
+				let lastLine = maxElement;
+
+				let yPos = parseInt(lastLine.style.top);
+				let xPos = mousePos[0];
+				// 判定距离该位置最近的Note
+				let notes = document.getElementsByClassName('note');
+				if (notes.length == 0) return; // 没有Note还判定个寂寞
+				let minDistance = 0;
+				let minNote = notes[0];
+				let flag = false;
+				for (let i = 0; i < notes.length; i++) {
+					let element = notes[i];
+					let eleX = parseInt(element.style.left);
+					let eleY = parseInt(element.style.top);
+					let distance =
+						Math.pow(eleX - xPos, 2) + Math.pow(eleY - yPos, 2);
+
+					if (Math.abs(eleX - xPos) >= 0.2 * WIDTH) continue;
+					else if (i == 0) {
+						minDistance = distance;
+						minNote = element;
+					} else if (distance < minDistance) {
+						distance = minDistance;
+						minNote = element;
+					}
+					flag = true;
+				}
+				if (flag) {
+					let distanceY = Math.abs(
+						parseInt(minNote.style.top) - yPos
+					);
+					if (distanceY <= PERFECT) {
+						createEffect(
+							'perfect',
+							parseInt(minNote.style.left)+50,
+							parseInt(yPos)
+						);
+						minNote.remove();
+						combo++;
+						score += PSCORE;
+					} else if (distanceY <= GOOD) {
+						createEffect(
+							'good',
+							parseInt(minNote.style.left)+50,
+							parseInt(yPos)
+						);
+						minNote.remove();
+						combo++;
+						score += GSCORE;
+					} else if (distanceY <= BAD) {
+						createEffect(
+							'bad',
+							parseInt(minNote.style.left)+50,
+							parseInt(yPos)
+						);
+						minNote.remove();
+						combo = 0;
+					}
+				}
+			}
+
 			window.onload = async function () {
 				createTapNote();
-				let tick = 1;
+				createJudgeLine(600);
+				addEventListener('click', onclick, false);
 				while (true) {
+					document.getElementById('comboNum').innerHTML =
+						combo.toString();
+					document.getElementById('scoreNum').innerHTML = pad(
+						score,
+						7
+					);
 					await sleep(50);
 					notesFall();
+					removeEffect();
 					if (tick % 10 == 0) {
 						createTapNote(randbet(0, WIDTH));
 					}
