@@ -79,7 +79,7 @@
 			let score = 0;
 			const keyOrder = 'QWERT';
 			const keyCodeOrder = [81, 87, 69, 82, 84];
-			const music = new Audio('resource/zheJiangWenZhou.mp3')
+			const music = new Audio('resource/zheJiangWenZhou.mp3');
 			const pad = (num, cover) =>
 				'0'.repeat(cover).concat(num).slice(-cover);
 			let effects_to_remove = new Array();
@@ -256,22 +256,26 @@
 				removeEventListener('click', main);
 				document.getElementById('clickTip').innerHTML = '';
 				document.getElementById('comboText').innerHTML = 'COMBO';
-				createTapNote();
+				let lis = [
+					2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 23, 24, 26, 28, 32,
+					34, 36, 38, 40, 42, 44, 46, 48, 50, 52, 54, 55, 56, 58, 60,
+					64, 66, 67, 68, 70, 71, 72, 74, 76, 78, 80, 82, 84, 86, 88,
+					90, 92, 94, 96, 98, 99, 100, 102, 103, 104, 105, 106, 107,
+					108, 112, 113, 114, 115, 116, 118, 120, 122, 124, 128,
+				];
 				createJudgeLine(600);
 				addEventListener('click', onclick, false);
 				addEventListener('keyup', keyup, true);
-				let ticklist = new Array()
-				for (let i=0; i<10; i++)  ticklist.push(Math.round(11.9*i))
-				music.play()
+				music.play();
 				while (true) {
 					document.getElementById('comboNum').innerHTML =
 						combo.toString();
 					document.getElementById('scoreNum').innerHTML =
 						score < 1000000 ? pad(score, 7) : '我说你φ了你信不';
-					await sleep(40);
+					await sleep(17);
 					notesFall();
 					removeEffect();
-					if (ticklist.indexOf(tick % 11) != -1) {
+					if (tick%28==1) {
 						createTapNote(randbet(0, WIDTH - 1));
 					}
 					tick++;
