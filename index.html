@@ -60,9 +60,12 @@
 	<body style="background-color: #2f3542">
 		<!-- <img src="source/tap.jpg" alt="[Tap Note]" class="note tap"> -->
 		<!-- 现在使用CSS绘制音符、判定线等 -->
+		<div id="gameElements">
+			<div id="notes"></div>
+			<div id="judgelines"></div>
+			<div id="effects"></div>
+		</div>
 		<div id="clickTip"></div>
-		<div id="notes"></div>
-		<div id="judgelines"></div>
 		<div id="showCombo">
 			<span id="comboNum"></span><br />
 			<span id="comboText"></span>
@@ -70,12 +73,11 @@
 		<div id="showScore">
 			<span id="scoreNum"></span>
 		</div>
-		<div id="effects"></div>
 
 		<script>
-			const MAX_HEIGHT = 800;
-			const noteCount = 10;
-			const WIDTH = 1000;
+			const HEIGHT = document.documentElement.clientHeight;
+			const noteCount = 200;
+			const WIDTH = document.documentElement.clientWidth;
 			const PERFECT = 40; // {PERFECT}px以内为Perfect判定
 			const PSCORE = Math.floor(900000 / noteCount); // Percect判定的加分
 			const GOOD = 80;
@@ -165,7 +167,7 @@
 				for (let i = 0; i < notes.length; i++) {
 					let note = notes[i];
 					note.style.top = parseInt(note.style.top) + 20 + 'px';
-					if (parseInt(note.style.top) >= MAX_HEIGHT) {
+					if (parseInt(note.style.top) >= HEIGHT) {
 						note.remove();
 						combo = 0;
 						fC = false;
@@ -281,6 +283,32 @@
 
 				judgeDragNote(xPos, yPos);
 			}
+			function setRotate(angle = 0) {
+				let element = document.getElementById('gameElements');
+				element.style.transform = 'rotate(' + angle + 'deg)';
+			}
+			function keyDown() {
+				let e = window.event;
+				let kc = e.keyCode;
+				// 默认在最新生成的判定线上进行判定
+				let lines = document.getElementsByClassName('judgel');
+				if (lines.length == 0) return; // 没有判定线还判定个寂寞
+				let maxId = 0;
+				let maxElement = lines[0];
+				for (let i = 0; i < lines.length; i++) {
+					let element = lines[i];
+					if (parseInt(element.id.substr(2)) > maxId) {
+						maxId = parseInt(element.id.substr(2));
+						maxElement = element;
+					}
+				}
+				let lastLine = maxElement;
+
+				let yPos = parseInt(lastLine.style.top);
+				let xPos = (WIDTH / 5) * keyCodeOrder.indexOf(kc) + WIDTH / 10;
+
+				judgeDragNote(xPos, yPos);
+			}
 			function judgeDragNote(xPos, yPos) {
 				let notes = document.getElementsByClassName('note drag');
 				if (notes.length == 0) return; // 没有Note还判定个寂寞
@@ -347,8 +375,11 @@
 				removeEventListener('click', main);
 				document.getElementById('clickTip').innerHTML = '';
 				document.getElementById('comboText').innerHTML = 'COMBO';
-				createTapNote();
-				createJudgeLine(600);
+				// document.getElementById('gameElements').style.width = WIDTH + 'px'
+				// document.getElementById('gameElements').style.height = HEIGHT + 'px'
+				document.getElementById('gameElements').style.transformOrigin =
+					WIDTH / 2 + 'px ' + HEIGHT / 2 + 'px';
+				createJudgeLine(HEIGHT / 2);
 				addEventListener('click', onclick);
 				addEventListener('mousemove', updateMousePosition);
 				addEventListener('touchmove', updateMousePosition);
@@ -359,13 +390,16 @@
 				addEventListener('touchstart', function () {
 					mouseClicking_huh = true;
 				});
+				addEventListener('touchstart', updateMousePosition);
 				addEventListener('mouseup', function () {
 					mouseClicking_huh = false;
 				});
 				addEventListener('touchend', function () {
 					mouseClicking_huh = false;
 				});
+				addEventListener('keydown', keyDown);
 				while (true) {
+					setRotate(tick % 180 * 2);
 					maxCombo = Math.max(maxCombo, combo);
 					comboScore = Math.floor((maxCombo / noteCount) * 100000);
 					document.getElementById('comboNum').innerHTML =
@@ -377,11 +411,15 @@
 					if (mouseClicking_huh) mouseClicking();
 					notesFall();
 					removeEffect();
-					if (tick % 10 == 0) {
-						if (Math.random() < 0.5)
-							createTapNote(randbet(0, WIDTH - 1));
-						else createDragNote(randbet(0, WIDTH - 1));
+					switch (tick % 20) {
+						case 0:
+							createTapNote(WIDTH / 2);
+							break;
+						case 5:
+							createDragNote(WIDTH / 2 - 200);
+							createDragNote(WIDTH / 2 + 200);
 					}
+					if (tick == 1380) break;
 					tick++;
 					await sleep(40);
 				}
@@ -389,11 +427,13 @@
 				if (aP) score = 1000000;
 				else if (fC) score = 100000 + judgeScore;
 				else score = judgeScore + comboScore;
+				document.getElementById('scoreNum').innerHTML = score;
 			}
 			window.onload = function () {
 				let ct = document.getElementById('clickTip');
 				ct.innerHTML = '<h1>点击屏幕以开始游戏</h1>';
 				addEventListener('click', main, false);
+				console.log(WIDTH, HEIGHT);
 			};
 		</script>
 	</body>
