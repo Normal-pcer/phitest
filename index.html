@@ -75,6 +75,8 @@
 		</div>
 
 		<script>
+			const backGroundMusic = new Audio("")
+
 			const HEIGHT = document.documentElement.clientHeight;
 			const noteCount = 100;
 			const WIDTH = document.documentElement.clientWidth;
@@ -398,6 +400,7 @@
 					mouseClicking_huh = false;
 				});
 				addEventListener('keydown', keyDown);
+				backGroundMusic.play()
 				while (true) {
 					setRotate((tick % 180) * 2);
 					maxCombo = Math.max(maxCombo, combo);
@@ -441,7 +444,6 @@
 				let ct = document.getElementById('clickTip');
 				ct.innerHTML = '<h1>点击屏幕以开始游戏</h1>';
 				addEventListener('click', main, false);
-				console.log(WIDTH, HEIGHT);
 			};
 		</script>
 	</body>
