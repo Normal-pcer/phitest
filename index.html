@@ -12,9 +12,18 @@
 				height: 20px;
 				width: 100%;
 			}
+			.note {
+				width: 100px;
+				height: 25px;
+				position: absolute;
+			}
 			.tap {
 				background-color: #1e90ff;
 				color: #dfe4ea;
+			}
+			.drag {
+				background-color: #fff200;
+				color: #2f3542;
 			}
 			#showCombo {
 				color: #dfe4ea;
@@ -73,6 +82,13 @@
 			const GSCORE = Math.floor(0.65 * PSCORE);
 			const BAD = 100;
 			const EFFECT_LAST = 5; // 特效持续{}刻
+			const pad = (num, cover) =>
+				'0'.repeat(cover).concat(num).slice(-cover);
+			const keyOrder = 'QWERT';
+			const keyCodeOrder = [81, 87, 69, 82, 84];
+			const updateMousePosition = function () {
+				mousePos = [Number(event.pageX), Number(event.pageY)];
+			};
 			let countOfNotes = 0;
 			let countOfLines = 0;
 			let combo = 0;
@@ -80,14 +96,11 @@
 			let tick = 1;
 			let judgeScore = 0;
 			let comboScore = 0;
-			const keyOrder = 'QWERT';
-			const keyCodeOrder = [81, 87, 69, 82, 84];
 			let aP = true;
 			let fC = true;
-
-			const pad = (num, cover) =>
-				'0'.repeat(cover).concat(num).slice(-cover);
+			let mouseClicking_huh = false;
 			let effects_to_remove = new Array();
+			let mousePos = new Array();
 
 			function createEffect(type = 'perfect', x, y) {
 				let effect = document.createElement('div');
@@ -116,17 +129,28 @@
 					keyOrder[Math.floor(xPos / (WIDTH / 5))] +
 					'judge';
 				tap.id = 'note' + countOfNotes;
-				tap.style =
-					'width: 100px; height: 25px; position: absolute; top: 0px; left: ' +
-					xPos +
-					'px;';
+				tap.style = 'top: 0px; left: ' + xPos + 'px;';
 				document.getElementById('notes').appendChild(tap);
 				tap.innerHTML = (
 					keyOrder[Math.floor(xPos / (WIDTH / 5))] + ' '
 				).repeat(4);
 				countOfNotes++;
 			}
-
+			function createDragNote(xPos = 0) {
+				if (countOfNotes >= noteCount) return;
+				let tap = document.createElement('div');
+				tap.className =
+					'note drag ' +
+					keyOrder[Math.floor(xPos / (WIDTH / 5))] +
+					'judge';
+				tap.id = 'note' + countOfNotes;
+				tap.style = 'top: 0px; left: ' + xPos + 'px;';
+				document.getElementById('notes').appendChild(tap);
+				tap.innerHTML = (
+					keyOrder[Math.floor(xPos / (WIDTH / 5))] + ' '
+				).repeat(4);
+				countOfNotes++;
+			}
 			function createJudgeLine(yPos = 0) {
 				let line = document.createElement('div');
 				line.className = 'judgel';
@@ -158,8 +182,6 @@
 			}
 
 			function onclick() {
-				let mousePos = [Number(event.pageX), Number(event.pageY)];
-
 				// 默认在最新生成的判定线上进行判定
 				let lines = document.getElementsByClassName('judgel');
 				if (lines.length == 0) return; // 没有判定线还判定个寂寞
@@ -177,11 +199,11 @@
 				let yPos = parseInt(lastLine.style.top);
 				let xPos = mousePos[0];
 
-				judgeNote(xPos, yPos);
+				judgeTapNote(xPos, yPos);
 			}
-			function judgeNote(xPos, yPos) {
+			function judgeTapNote(xPos, yPos) {
 				// 判定距离该位置最近的Note
-				let notes = document.getElementsByClassName('note');
+				let notes = document.getElementsByClassName('note tap');
 				if (notes.length == 0) return; // 没有Note还判定个寂寞
 				let minDistance = 1048576;
 				let minNote = notes[0];
@@ -239,10 +261,69 @@
 					}
 				}
 			}
+			function mouseClicking() {
+				// 默认在最新生成的判定线上进行判定
+				let lines = document.getElementsByClassName('judgel');
+				if (lines.length == 0) return; // 没有判定线还判定个寂寞
+				let maxId = 0;
+				let maxElement = lines[0];
+				for (let i = 0; i < lines.length; i++) {
+					let element = lines[i];
+					if (parseInt(element.id.substr(2)) > maxId) {
+						maxId = parseInt(element.id.substr(2));
+						maxElement = element;
+					}
+				}
+				let lastLine = maxElement;
+
+				let yPos = parseInt(lastLine.style.top);
+				let xPos = mousePos[0];
+
+				judgeDragNote(xPos, yPos);
+			}
+			function judgeDragNote(xPos, yPos) {
+				let notes = document.getElementsByClassName('note drag');
+				if (notes.length == 0) return; // 没有Note还判定个寂寞
+				let minDistance = 1048576;
+				let minNote = notes[0];
+				let flag = false;
+				for (let i = 0; i < notes.length; i++) {
+					let element = notes[i];
+					let eleX = parseInt(element.style.left) + 50;
+					let eleY = parseInt(element.style.top) + 12.5;
+					let distance =
+						Math.pow(eleX - xPos, 2) + Math.pow(eleY - yPos, 2);
+
+					if (Math.abs(eleX - xPos) >= 0.1 * WIDTH) continue;
+					else if (i == 0) {
+						minDistance = distance;
+						minNote = element;
+					} else if (distance < minDistance) {
+						minDistance = distance;
+						minNote = element;
+					}
+					flag = true;
+				}
+				if (flag) {
+					let distanceY = Math.abs(
+						parseInt(minNote.style.top) - yPos
+					);
+					if (distanceY <= PERFECT) {
+						createEffect(
+							'perfect',
+							parseInt(minNote.style.left) + 50,
+							parseInt(yPos)
+						);
+						minNote.remove();
+						combo++;
+						judgeScore += PSCORE;
+					}
+				}
+			}
+
 			function keyup() {
 				let e = window.event;
 				let kc = e.keyCode;
-
 				// 默认在最新生成的判定线上进行判定
 				let lines = document.getElementsByClassName('judgel');
 				if (lines.length == 0) return; // 没有判定线还判定个寂寞
@@ -260,7 +341,7 @@
 				let yPos = parseInt(lastLine.style.top);
 				let xPos = (WIDTH / 5) * keyCodeOrder.indexOf(kc) + WIDTH / 10;
 
-				judgeNote(xPos, yPos);
+				judgeTapNote(xPos, yPos);
 			}
 			async function main() {
 				removeEventListener('click', main);
@@ -268,8 +349,22 @@
 				document.getElementById('comboText').innerHTML = 'COMBO';
 				createTapNote();
 				createJudgeLine(600);
-				addEventListener('click', onclick, false);
-				addEventListener('keyup', keyup, true);
+				addEventListener('click', onclick);
+				addEventListener('mousemove', updateMousePosition);
+				addEventListener('touchmove', updateMousePosition);
+				addEventListener('keyup', keyup);
+				addEventListener('mousedown', function () {
+					mouseClicking_huh = true;
+				});
+				addEventListener('touchstart', function () {
+					mouseClicking_huh = true;
+				});
+				addEventListener('mouseup', function () {
+					mouseClicking_huh = false;
+				});
+				addEventListener('touchend', function () {
+					mouseClicking_huh = false;
+				});
 				while (true) {
 					maxCombo = Math.max(maxCombo, combo);
 					comboScore = Math.floor((maxCombo / noteCount) * 100000);
@@ -279,13 +374,16 @@
 						judgeScore <= 1000000
 							? pad(judgeScore + comboScore, 7)
 							: '我说你φ了你信不';
-					await sleep(40);
+					if (mouseClicking_huh) mouseClicking();
 					notesFall();
 					removeEffect();
 					if (tick % 10 == 0) {
-						createTapNote(randbet(0, WIDTH - 1));
+						if (Math.random() < 0.5)
+							createTapNote(randbet(0, WIDTH - 1));
+						else createDragNote(randbet(0, WIDTH - 1));
 					}
 					tick++;
+					await sleep(40);
 				}
 				let score = 0;
 				if (aP) score = 1000000;
