@@ -76,7 +76,7 @@
 
 		<script>
 			const HEIGHT = document.documentElement.clientHeight;
-			const noteCount = 200;
+			const noteCount = 100;
 			const WIDTH = document.documentElement.clientWidth;
 			const PERFECT = 40; // {PERFECT}px以内为Perfect判定
 			const PSCORE = Math.floor(900000 / noteCount); // Percect判定的加分
@@ -399,7 +399,7 @@
 				});
 				addEventListener('keydown', keyDown);
 				while (true) {
-					setRotate(tick % 180 * 2);
+					setRotate((tick % 180) * 2);
 					maxCombo = Math.max(maxCombo, combo);
 					comboScore = Math.floor((maxCombo / noteCount) * 100000);
 					document.getElementById('comboNum').innerHTML =
@@ -412,14 +412,22 @@
 					notesFall();
 					removeEffect();
 					switch (tick % 20) {
-						case 0:
-							createTapNote(WIDTH / 2);
-							break;
 						case 5:
-							createDragNote(WIDTH / 2 - 200);
-							createDragNote(WIDTH / 2 + 200);
+							createTapNote(WIDTH / 2 - 200);
+							createTapNote(WIDTH / 2 + 200);
 					}
-					if (tick == 1380) break;
+					let lines = document.getElementsByClassName('judgel');
+					if (aP) {
+						for (let i = 0; i < lines.length; i++)
+							lines[i].style.borderTopColor = '#fdcb6e';
+					} else if (fC) {
+						for (let i = 0; i < lines.length; i++)
+							lines[i].style.borderTopColor = '#1e90ff';
+					} else {
+						for (let i = 0; i < lines.length; i++)
+							lines[i].style.borderTopColor = '#dfe4ea';
+					}
+					if (tick == 1010) break;
 					tick++;
 					await sleep(40);
 				}
